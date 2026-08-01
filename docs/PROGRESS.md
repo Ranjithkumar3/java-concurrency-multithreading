@@ -6,10 +6,10 @@
 - **Java version:** 21
 - **Build system:** Maven
 - **Started:** 2026-08-01
-- **Current exercise:** Exercise 1 — Creating threads
+- **Current exercise:** Exercise 2 — Thread coordination and task results
 - **Overall status:** In progress
-- **Last completed exercise:** Exercise 1 — Creating threads with `Thread` and `Runnable`
-- **Next action:** Begin Exercise 2 when ready
+- **Last completed exercise:** Exercise 2 — `Callable`, `Future`, `join`, daemon threads, and thread states
+- **Next action:** Begin Exercise 3 when ready
 
 ## Status definitions
 
@@ -24,7 +24,7 @@
 | No. | Exercise | Status | Notes |
 |---:|---|---|---|
 | 1 | Creating threads with `Thread` and `Runnable` | Completed | Implemented, reviewed, demonstrated, and verified |
-| 2 | `Callable`, `Future`, `join`, daemon threads, and thread states | Not started | |
+| 2 | `Callable`, `Future`, `join`, daemon threads, and thread states | Completed | Implemented, reviewed, demonstrated, and verified |
 | 3 | Thread interruption and cooperative cancellation | Not started | |
 | 4 | Reproducing a lost-update race condition | Not started | |
 | 5 | Fixing shared state with `synchronized` | Not started | |
@@ -98,9 +98,67 @@ The final message from `main` appeared before all worker output in two runs and 
 
 Starting a thread does not guarantee when it will run relative to other threads; it only allows it to run independently.
 
+### Exercise 2: `Callable`, `Future`, `join`, daemon threads, and thread states
+
+- **Status:** Completed
+- **Started on:** 2026-08-01
+- **Completed on:** 2026-08-02
+- **Topic note:** `docs/02-thread-coordination-and-results.md`
+
+### Learning objectives
+
+- Wait for a thread using `join()`
+- Inspect basic thread states
+- Return a value from work using `Callable` and retrieve it with `Future`
+- Understand daemon-thread lifecycle behavior
+
+### Implementation
+
+- **Classes created:** `CountingWorker`, `JoinDemo`, `SumTask`, `CallableFutureDemo`, `HeartbeatDaemon`, `DaemonDemo`
+- **Tests created:** None
+- **Build result:** Passed (`mvn clean test`; no tests present yet)
+- **Demonstration result:** `join()` kept `main` waiting until the worker terminated; `Future.get()` returned `15`; daemon runs exited after `main` without printing heartbeats.
+
+### My prediction
+
+Before `start()`, the worker will be in the `NEW` state. After `join()` returns, it will be `TERMINATED`. The final message from `main` cannot appear before any worker output because `join()` makes `main` wait for the worker to finish.
+
+When `main` calls `Future.get()`, it waits until the task supplies its value; the sum task should return `15`.
+
+A daemon thread may not print all ten heartbeats. Once `main` ends and no non-daemon threads remain, the JVM exits without waiting for daemon threads to finish.
+
+### My observations
+
+`CountingWorker` was `NEW` before start and `TERMINATED` after `join()`. `Future.get()` returned the calculated sum of `15`. In three daemon runs, only the final message from `main` printed because the JVM exited before the daemon was scheduled.
+
+### What I understood
+
+`join()` makes the calling thread wait for a target thread to finish. `Future.get()` also waits, but it returns the task's value. Daemon threads are background helpers and can stop abruptly when no non-daemon threads remain. `Thread.sleep()` pauses only the current thread.
+
+### Remaining doubts
+
+- None recorded
+
+### Key takeaway
+
+Choose `join()` for thread completion, `Future.get()` for a result, and daemon threads only for non-essential background work.
+
 ## Completed exercise log
 
 Add one entry after each completed exercise.
+
+#### Exercise 2: `Callable`, `Future`, `join`, daemon threads, and thread states
+
+- **Completed on:** 2026-08-02
+- **Implemented classes:** `CountingWorker`, `JoinDemo`, `SumTask`, `CallableFutureDemo`, `HeartbeatDaemon`, `DaemonDemo`
+- **Tests added:** None; this exercise used console demonstrations.
+- **Topic note updated:** `docs/02-thread-coordination-and-results.md`
+- **Build result:** `mvn clean test` passed on Java 21.
+- **Concepts understood:** `join()`, basic thread states, `Callable`, `Future`, `FutureTask`, daemon lifecycle behavior, and `Thread.sleep()`.
+- **Mistakes corrected:** `join()` makes the caller wait for the target; threads need not run simultaneously; daemon work is not guaranteed to finish.
+- **Interview questions reviewed:** `join()` caller and target, `join()` versus `Future.get()`, and why daemons cannot perform essential work.
+- **Remaining doubts:** None recorded.
+- **Suggested commit message:** `Complete Exercise 2 coordination and task result demos`
 
 #### Exercise 1: Creating threads with `Thread` and `Runnable`
 
