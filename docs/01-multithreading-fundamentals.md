@@ -53,10 +53,20 @@
 | Thread pool | A reusable group of worker threads used to execute many tasks. |
 | `shutdown()` | Stops an executor from accepting new tasks while allowing submitted tasks to finish. |
 | `shutdownNow()` | Requests that an executor stop active tasks and returns tasks that never started. |
+| `awaitTermination()` | Waits for an executor to finish after shutdown, up to a time limit. |
 | `ThreadPoolExecutor` | A configurable executor with core size, maximum size, queue, and rejection policy. |
 | Work queue | The queue holding submitted tasks that cannot start immediately. |
 | Rejection policy | The action an executor takes when it cannot accept another task. |
 | `CallerRunsPolicy` | A rejection policy that runs the rejected task on the submitting thread. |
+| `CompletableFuture` | A future that supports composing asynchronous stages and error handling. |
+| `supplyAsync()` | Starts an asynchronous computation that produces a value. |
+| `thenApply()` | Transforms a completed result synchronously. |
+| `thenCompose()` | Chains a stage that itself returns another `CompletableFuture`. |
+| `allOf()` | Completes when all supplied futures complete. |
+| `exceptionally()` | Supplies a fallback value when a future completes exceptionally. |
+| Platform thread | A traditional Java thread mapped to an operating-system thread. |
+| Virtual thread | A lightweight Java 21 thread scheduled by the JVM on platform threads. |
+| Carrier thread | A platform thread temporarily used to run a virtual thread. |
 | `ReentrantLock` | An explicit lock with features such as timed or non-blocking acquisition. |
 | Reentrancy | A thread that already holds a lock can acquire that same lock again safely. |
 | `tryLock()` | Attempts to acquire a lock without waiting forever. |
@@ -181,13 +191,21 @@ An `ExecutorService` manages worker threads and runs tasks submitted to it, so a
 
 ## Executor shutdown
 
-`shutdown()` begins graceful shutdown: the executor rejects new tasks but lets already submitted tasks finish. `shutdownNow()` requests interruption of active tasks and returns queued tasks that did not start; it is not a guarantee that active tasks will stop. A program should always shut down an `ExecutorService` it creates.
+`shutdown()` begins graceful shutdown: the executor rejects new tasks but lets already submitted tasks finish. `awaitTermination()` can then wait up to a time limit for those tasks to complete. `shutdownNow()` requests interruption of active tasks and returns queued tasks that did not start; it is not a guarantee that active tasks will stop. A program should always shut down an `ExecutorService` it creates.
 
 ## `ThreadPoolExecutor` and rejection
 
 `ThreadPoolExecutor` exposes the policy behind a thread pool: core pool size, maximum pool size, a work queue, and a rejection policy. When a task is submitted, it first creates workers up to the core size, then queues tasks. If the queue is full, it creates workers up to the maximum size. If both the queue and maximum workers are full, the executor rejects the task.
 
 Common rejection policies are `AbortPolicy`, which throws `RejectedExecutionException`; `CallerRunsPolicy`, which runs the task on the submitting thread and naturally slows submissions; `DiscardPolicy`, which silently drops the task; and `DiscardOldestPolicy`, which drops the oldest queued task and retries the submission. An unbounded queue can prevent the executor from ever growing beyond its core size, so queue choice is part of capacity design.
+
+## `CompletableFuture`
+
+`CompletableFuture` represents a result that will complete later and lets code declare what happens next. `supplyAsync()` starts an asynchronous computation that produces a value. `thenApply()` transforms one completed value into another. `thenCompose()` chains an asynchronous operation that returns its own `CompletableFuture`, avoiding nested futures. `allOf()` waits for multiple futures to complete. `exceptionally()` supplies a fallback after failure; `handle()` can inspect either a value or an exception. Prefer composition over repeatedly blocking with `get()` when building asynchronous workflows.
+
+## Platform threads and virtual threads
+
+A platform thread is the traditional Java thread mapped to an operating-system thread. A Java 21 virtual thread is a lightweight thread managed by the JVM and scheduled onto a smaller set of carrier platform threads. Virtual threads are ideal for many concurrent tasks that spend time blocked on I/O, such as network or database calls. They do not make CPU-bound work faster and do not remove the need for thread safety. Create one virtual thread per blocking task rather than pooling them; use ordinary bounded pools to control scarce external resources such as database connections.
 
 ## `ReentrantLock`, `tryLock()`, and deadlock
 

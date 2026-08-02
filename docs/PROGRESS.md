@@ -147,6 +147,14 @@ Choose `join()` for thread completion, `Future.get()` for a result, and daemon t
 
 Add one entry after each completed exercise.
 
+### Interview sprint checkpoint — 2026-08-02
+
+- **Practical demos completed:** Interruption and cooperative cancellation; lost-update race reproduction; `synchronized` and `AtomicInteger` counter fixes; `volatile` visibility flag; `ReentrantLock` with `tryLock()`; lock ordering; producer-consumer with `BlockingQueue`; `ExecutorService`; integrated `ThreadPoolExecutor`, `CompletableFuture`, and virtual-thread pipeline.
+- **Interview concepts covered:** Thread lifecycle, `Runnable`/`Callable`, `Future`, `join()`, interruption, JMM visibility and happens-before, locks and deadlock prevention, concurrent collections, executor lifecycle, rejection policies, `CompletableFuture`, and virtual threads.
+- **Mock MCQ result:** 29/30 correct.
+- **Correction retained:** `LongAdder` is best for heavily contended metric updates; use `AtomicLong` when an exact current value is required.
+- **Status:** Sprint coverage completed; full exercises remain available for later in-depth practice.
+
 #### Exercise 2: `Callable`, `Future`, `join`, daemon threads, and thread states
 
 - **Completed on:** 2026-08-02
