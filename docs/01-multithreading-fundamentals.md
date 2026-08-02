@@ -36,6 +36,7 @@
 | `volatile` | Ensures visibility of a variable's latest write, but not atomic compound updates. |
 | Atomic variable | A variable class that provides indivisible operations such as atomic increment. |
 | Atomicity | The property that an operation happens as one indivisible unit. |
+| Compare-and-set (CAS) | Atomically updates a value only when it still equals an expected value. |
 | Java Memory Model (JMM) | Java's rules for visibility, ordering, and safe communication between threads. |
 | Happens-before | A guarantee that one action's effects are visible to another action. |
 | `ExecutorService` | A service that runs submitted tasks and manages their worker threads. |
@@ -125,11 +126,11 @@ A race condition occurs when correctness depends on which thread happens to run 
 
 ## Visibility and `volatile`
 
-Visibility is whether one thread can reliably observe a value written by another thread. Declaring a field `volatile` makes reads observe the latest write to that field. It is useful for a simple shared flag, such as `running`, but it does not make `count++` safe because increment is a multi-step read-modify-write operation.
+Visibility is whether one thread can reliably observe a value written by another thread. Declaring a field `volatile` makes reads observe the latest write to that field. It is useful for a simple shared flag, such as `running`, but it does not make `count++` safe because increment is a multi-step read-modify-write operation. In the stop-worker demo, `main` calls a method that writes `false` to the `running` field on a shared worker object; the worker thread reads that same field in its loop and reliably sees `false` because it is `volatile`. `private` controls direct source-code access, not whether threads can share an object through its methods.
 
 ## Atomicity and atomic variables
 
-Atomicity means an operation is indivisible from other threads' point of view. Atomic classes such as `AtomicInteger` provide atomic operations including increment. They are appropriate for simple independent values such as counters, where using a lock would be unnecessary.
+Atomicity means an operation is indivisible from other threads' point of view. Atomic classes such as `AtomicInteger` provide atomic operations including increment. They are appropriate for simple independent values such as counters, where using a lock would be unnecessary. Atomic operations are commonly built with compare-and-set (CAS): update a value only if it still equals the expected old value; otherwise retry using the newer value.
 
 ## Java Memory Model and happens-before
 
