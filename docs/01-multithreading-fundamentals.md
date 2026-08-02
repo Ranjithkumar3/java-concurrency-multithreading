@@ -41,6 +41,9 @@
 | Atomicity | The property that an operation happens as one indivisible unit. |
 | Compare-and-set (CAS) | Atomically updates a value only when it still equals an expected value. |
 | `ConcurrentHashMap` | A thread-safe map designed for concurrent access and updates. |
+| `BlockingQueue` | A thread-safe queue that can wait when empty or full. |
+| Producer-consumer | A pattern where producers add work and consumers remove and process it. |
+| `LongAdder` | A high-throughput counter optimized for frequent concurrent updates. |
 | Java Memory Model (JMM) | Java's rules for visibility, ordering, and safe communication between threads. |
 | Happens-before | A guarantee that one action's effects are visible to another action. |
 | `ExecutorService` | A service that runs submitted tasks and manages their worker threads. |
@@ -48,6 +51,7 @@
 | `shutdown()` | Stops an executor from accepting new tasks while allowing submitted tasks to finish. |
 | `shutdownNow()` | Requests that an executor stop active tasks and returns tasks that never started. |
 | `ReentrantLock` | An explicit lock with features such as timed or non-blocking acquisition. |
+| Reentrancy | A thread that already holds a lock can acquire that same lock again safely. |
 | `tryLock()` | Attempts to acquire a lock without waiting forever. |
 | Deadlock | Threads permanently wait for locks held by one another. |
 | Lock ordering | A consistent global order for acquiring multiple locks to prevent deadlock. |
@@ -144,6 +148,12 @@ Atomicity means an operation is indivisible from other threads' point of view. A
 
 There is no built-in `AtomicString` because `String` is immutable: changing a string means replacing its reference. `AtomicReference<String>` provides atomic replacement or compare-and-set for that reference when needed. A map has many keys and operations, so it is not represented by one atomic variable; use `ConcurrentHashMap` for a map accessed by multiple threads, together with its atomic compound operations such as `putIfAbsent()` or `compute()` when required.
 
+## `BlockingQueue`, producer-consumer, and `LongAdder`
+
+A `BlockingQueue` is a thread-safe queue for passing work between threads. A producer uses `put()` to add an item and waits if a bounded queue is full. A consumer uses `take()` to remove an item and waits if the queue is empty. This producer-consumer pattern avoids hand-written `wait()` and `notify()` coordination in most application code.
+
+`LongAdder` is a counter designed for high contention. Instead of forcing every update through one shared value, it spreads updates across internal cells and combines them when `sum()` is called. It usually has higher update throughput than `AtomicLong`, but `sum()` is not an instantaneous exact snapshot during concurrent updates.
+
 ## Other atomic variable types
 
 `AtomicBoolean` is useful for a shared state that must change only once, such as ensuring that shutdown begins only once. Its compare-and-set operation can atomically change `false` to `true` only for the first successful thread.
@@ -166,7 +176,7 @@ An `ExecutorService` manages worker threads and runs tasks submitted to it, so a
 
 ## `ReentrantLock`, `tryLock()`, and deadlock
 
-`ReentrantLock` is an explicit alternative to `synchronized`. It must always be released in a `finally` block after successful acquisition. `tryLock()` attempts to acquire a lock and can return `false` instead of waiting forever, which is useful for timeouts and avoiding indefinite waits.
+`ReentrantLock` is an explicit alternative to `synchronized`. Both are reentrant: a thread that already holds the lock can acquire it again. `ReentrantLock` must always be released in a `finally` block after successful acquisition. `tryLock()` attempts to acquire a lock and can return `false` instead of waiting forever, which is useful for timeouts and avoiding indefinite waits. It also supports timed acquisition, interruptible acquisition, fairness options, and multiple condition variables.
 
 A deadlock occurs when threads permanently wait for one another's locks. A common pattern is thread A holding lock 1 while waiting for lock 2, and thread B holding lock 2 while waiting for lock 1. The primary prevention technique is lock ordering: every code path acquires the same set of locks in one consistent order.
 
