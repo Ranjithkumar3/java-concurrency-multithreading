@@ -1,4 +1,4 @@
-# Java Concurrency Interview Lab
+# Java Concurrency and Multithreading Lab
 
 A hands-on Java 21 project for learning concurrency and multithreading one exercise at a time.
 
