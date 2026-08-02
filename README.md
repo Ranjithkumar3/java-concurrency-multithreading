@@ -1,4 +1,4 @@
-# Java Concurrency & Multithreading Interview Lab
+# Java Concurrency & Multithreading Lab
 
 A hands-on Java 21 lab for learning how concurrent programs behave, why they fail, and how to make them safe. The focus is practical understanding for real backend work and technical interviews—not memorising APIs in isolation.
 
