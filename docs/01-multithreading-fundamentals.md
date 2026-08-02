@@ -35,14 +35,22 @@
 | Visibility | Whether a write by one thread becomes observable by another thread. |
 | `volatile` | Ensures visibility of a variable's latest write, but not atomic compound updates. |
 | Atomic variable | A variable class that provides indivisible operations such as atomic increment. |
+| `AtomicBoolean` | An atomic boolean value for operations such as one-time state changes. |
+| `AtomicLong` | An atomic long value for large counters and numeric updates. |
+| `AtomicReference<T>` | An atomic holder for an object reference, including a `String` reference. |
 | Atomicity | The property that an operation happens as one indivisible unit. |
 | Compare-and-set (CAS) | Atomically updates a value only when it still equals an expected value. |
+| `ConcurrentHashMap` | A thread-safe map designed for concurrent access and updates. |
 | Java Memory Model (JMM) | Java's rules for visibility, ordering, and safe communication between threads. |
 | Happens-before | A guarantee that one action's effects are visible to another action. |
 | `ExecutorService` | A service that runs submitted tasks and manages their worker threads. |
 | Thread pool | A reusable group of worker threads used to execute many tasks. |
 | `shutdown()` | Stops an executor from accepting new tasks while allowing submitted tasks to finish. |
 | `shutdownNow()` | Requests that an executor stop active tasks and returns tasks that never started. |
+| `ReentrantLock` | An explicit lock with features such as timed or non-blocking acquisition. |
+| `tryLock()` | Attempts to acquire a lock without waiting forever. |
+| Deadlock | Threads permanently wait for locks held by one another. |
+| Lock ordering | A consistent global order for acquiring multiple locks to prevent deadlock. |
 
 ## Process and thread
 
@@ -130,7 +138,19 @@ Visibility is whether one thread can reliably observe a value written by another
 
 ## Atomicity and atomic variables
 
-Atomicity means an operation is indivisible from other threads' point of view. Atomic classes such as `AtomicInteger` provide atomic operations including increment. They are appropriate for simple independent values such as counters, where using a lock would be unnecessary. Atomic operations are commonly built with compare-and-set (CAS): update a value only if it still equals the expected old value; otherwise retry using the newer value.
+Atomicity means an operation is indivisible from other threads' point of view. Atomic classes such as `AtomicInteger` provide atomic operations including increment. They are appropriate for simple independent values such as counters, where using a lock would be unnecessary. Atomic operations are commonly built with compare-and-set (CAS): update a value only if it still equals the expected old value; otherwise retry using the newer value. In the two-thread counter demonstration, `AtomicInteger` produced the expected result of `200000` in all five runs without using `synchronized`. Other standard atomic classes include `AtomicBoolean`, `AtomicLong`, and `AtomicReference<T>`.
+
+## `AtomicReference` and concurrent collections
+
+There is no built-in `AtomicString` because `String` is immutable: changing a string means replacing its reference. `AtomicReference<String>` provides atomic replacement or compare-and-set for that reference when needed. A map has many keys and operations, so it is not represented by one atomic variable; use `ConcurrentHashMap` for a map accessed by multiple threads, together with its atomic compound operations such as `putIfAbsent()` or `compute()` when required.
+
+## Other atomic variable types
+
+`AtomicBoolean` is useful for a shared state that must change only once, such as ensuring that shutdown begins only once. Its compare-and-set operation can atomically change `false` to `true` only for the first successful thread.
+
+`AtomicLong` is the `long` counterpart of `AtomicInteger`. Use it for values outside the `int` range, such as large counters, byte totals, or identifiers.
+
+`AtomicReference<T>` holds an object reference and supports atomic replacement or compare-and-set. It is useful when a thread must replace an entire immutable object or configuration snapshot only if the old reference has not changed.
 
 ## Java Memory Model and happens-before
 
@@ -143,6 +163,12 @@ An `ExecutorService` manages worker threads and runs tasks submitted to it, so a
 ## Executor shutdown
 
 `shutdown()` begins graceful shutdown: the executor rejects new tasks but lets already submitted tasks finish. `shutdownNow()` requests interruption of active tasks and returns queued tasks that did not start; it is not a guarantee that active tasks will stop. A program should always shut down an `ExecutorService` it creates.
+
+## `ReentrantLock`, `tryLock()`, and deadlock
+
+`ReentrantLock` is an explicit alternative to `synchronized`. It must always be released in a `finally` block after successful acquisition. `tryLock()` attempts to acquire a lock and can return `false` instead of waiting forever, which is useful for timeouts and avoiding indefinite waits.
+
+A deadlock occurs when threads permanently wait for one another's locks. A common pattern is thread A holding lock 1 while waiting for lock 2, and thread B holding lock 2 while waiting for lock 1. The primary prevention technique is lock ordering: every code path acquires the same set of locks in one consistent order.
 
 ## Interview summary
 
