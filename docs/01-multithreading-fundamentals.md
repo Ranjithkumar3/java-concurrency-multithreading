@@ -42,14 +42,21 @@
 | Compare-and-set (CAS) | Atomically updates a value only when it still equals an expected value. |
 | `ConcurrentHashMap` | A thread-safe map designed for concurrent access and updates. |
 | `BlockingQueue` | A thread-safe queue that can wait when empty or full. |
+| `ArrayBlockingQueue` | A bounded `BlockingQueue` backed by an array. |
 | Producer-consumer | A pattern where producers add work and consumers remove and process it. |
 | `LongAdder` | A high-throughput counter optimized for frequent concurrent updates. |
+| `wait()` | Makes the current thread release a monitor and wait for a notification. |
+| `notify()` / `notifyAll()` | Wakes one / all threads waiting on the same monitor. |
 | Java Memory Model (JMM) | Java's rules for visibility, ordering, and safe communication between threads. |
 | Happens-before | A guarantee that one action's effects are visible to another action. |
 | `ExecutorService` | A service that runs submitted tasks and manages their worker threads. |
 | Thread pool | A reusable group of worker threads used to execute many tasks. |
 | `shutdown()` | Stops an executor from accepting new tasks while allowing submitted tasks to finish. |
 | `shutdownNow()` | Requests that an executor stop active tasks and returns tasks that never started. |
+| `ThreadPoolExecutor` | A configurable executor with core size, maximum size, queue, and rejection policy. |
+| Work queue | The queue holding submitted tasks that cannot start immediately. |
+| Rejection policy | The action an executor takes when it cannot accept another task. |
+| `CallerRunsPolicy` | A rejection policy that runs the rejected task on the submitting thread. |
 | `ReentrantLock` | An explicit lock with features such as timed or non-blocking acquisition. |
 | Reentrancy | A thread that already holds a lock can acquire that same lock again safely. |
 | `tryLock()` | Attempts to acquire a lock without waiting forever. |
@@ -150,7 +157,9 @@ There is no built-in `AtomicString` because `String` is immutable: changing a st
 
 ## `BlockingQueue`, producer-consumer, and `LongAdder`
 
-A `BlockingQueue` is a thread-safe queue for passing work between threads. A producer uses `put()` to add an item and waits if a bounded queue is full. A consumer uses `take()` to remove an item and waits if the queue is empty. This producer-consumer pattern avoids hand-written `wait()` and `notify()` coordination in most application code.
+A `BlockingQueue` is a thread-safe queue for passing work between threads. A producer uses `put()` to add an item and waits if a bounded queue is full. A consumer uses `take()` to remove an item and waits if the queue is empty. `ArrayBlockingQueue` is a common bounded implementation. This producer-consumer pattern avoids hand-written `wait()` and `notify()` coordination in most application code.
+
+`wait()` and `notify()` are low-level monitor methods used with `synchronized`: `wait()` releases that monitor and pauses the current thread, while `notify()` wakes one waiting thread and `notifyAll()` wakes all waiting threads. In modern application code, prefer `BlockingQueue` when the problem is passing work from producers to consumers.
 
 `LongAdder` is a counter designed for high contention. Instead of forcing every update through one shared value, it spreads updates across internal cells and combines them when `sum()` is called. It usually has higher update throughput than `AtomicLong`, but `sum()` is not an instantaneous exact snapshot during concurrent updates.
 
@@ -173,6 +182,12 @@ An `ExecutorService` manages worker threads and runs tasks submitted to it, so a
 ## Executor shutdown
 
 `shutdown()` begins graceful shutdown: the executor rejects new tasks but lets already submitted tasks finish. `shutdownNow()` requests interruption of active tasks and returns queued tasks that did not start; it is not a guarantee that active tasks will stop. A program should always shut down an `ExecutorService` it creates.
+
+## `ThreadPoolExecutor` and rejection
+
+`ThreadPoolExecutor` exposes the policy behind a thread pool: core pool size, maximum pool size, a work queue, and a rejection policy. When a task is submitted, it first creates workers up to the core size, then queues tasks. If the queue is full, it creates workers up to the maximum size. If both the queue and maximum workers are full, the executor rejects the task.
+
+Common rejection policies are `AbortPolicy`, which throws `RejectedExecutionException`; `CallerRunsPolicy`, which runs the task on the submitting thread and naturally slows submissions; `DiscardPolicy`, which silently drops the task; and `DiscardOldestPolicy`, which drops the oldest queued task and retries the submission. An unbounded queue can prevent the executor from ever growing beyond its core size, so queue choice is part of capacity design.
 
 ## `ReentrantLock`, `tryLock()`, and deadlock
 
