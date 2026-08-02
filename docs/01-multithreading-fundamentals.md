@@ -24,6 +24,24 @@
 | Daemon thread | A background thread that does not keep the JVM alive. |
 | `Thread.sleep(...)` | Pauses the currently executing thread for approximately the requested time. |
 | `InterruptedException` | A signal that a waiting or sleeping thread has been asked to stop waiting. |
+| `interrupt()` | Requests that a target thread stop waiting or notice its interrupted status. |
+| Interrupted status | A flag on a thread indicating that interruption has been requested. |
+| Cooperative cancellation | A task stops itself after noticing an interruption or other cancellation request. |
+| Shared mutable state | Data that multiple threads can read and change. |
+| Race condition | A bug where a result depends on unpredictable thread timing. |
+| Lost update | A race where one thread's write overwrites another thread's update. |
+| `synchronized` | Ensures only one thread at a time enters code guarded by the same lock. |
+| Intrinsic lock (monitor) | The built-in lock associated with every Java object and used by `synchronized`. |
+| Visibility | Whether a write by one thread becomes observable by another thread. |
+| `volatile` | Ensures visibility of a variable's latest write, but not atomic compound updates. |
+| Atomic variable | A variable class that provides indivisible operations such as atomic increment. |
+| Atomicity | The property that an operation happens as one indivisible unit. |
+| Java Memory Model (JMM) | Java's rules for visibility, ordering, and safe communication between threads. |
+| Happens-before | A guarantee that one action's effects are visible to another action. |
+| `ExecutorService` | A service that runs submitted tasks and manages their worker threads. |
+| Thread pool | A reusable group of worker threads used to execute many tasks. |
+| `shutdown()` | Stops an executor from accepting new tasks while allowing submitted tasks to finish. |
+| `shutdownNow()` | Requests that an executor stop active tasks and returns tasks that never started. |
 
 ## Process and thread
 
@@ -84,6 +102,46 @@ A daemon thread is a background helper thread. The JVM exits when no non-daemon 
 ## `Thread.sleep()`
 
 `Thread.sleep(milliseconds)` pauses the currently executing thread for approximately the requested duration. It does not pause the whole program or any other threads. The duration is not exact, and the sleeping thread can be interrupted, so Java requires `InterruptedException` to be handled.
+
+## `interrupt()` and interrupted status
+
+Calling `targetThread.interrupt()` requests interruption of `targetThread`; it does not forcibly kill it. If the target is sleeping, waiting, or joining, Java normally causes that operation to throw `InterruptedException`, ending that wait. If the target is actively running, Java sets its interrupted-status flag instead; the task must check that flag with `isInterrupted()` and choose to stop.
+
+## Cooperative cancellation
+
+Java tasks normally cancel cooperatively: the task notices an interruption request and chooses to stop cleanly. A task that catches `InterruptedException` should usually restore its interrupted status and then finish or propagate the interruption. Forcibly stopping a thread is unsafe because it can leave shared state inconsistent.
+
+## Shared mutable state
+
+Shared mutable state is data that more than one thread can access and change, such as a shared counter. It is the source of many concurrency bugs because two threads can attempt related operations at the same time.
+
+## Race condition and lost update
+
+A race condition occurs when correctness depends on which thread happens to run first. `count++` is not one indivisible action: it reads the old value, calculates a new value, and writes it back. If two threads read the same old value before either writes, both can write the same new value. One increment is then lost; this is a lost-update race condition.
+
+## `synchronized` and intrinsic locks
+
+`synchronized` provides mutual exclusion: only one thread can execute code protected by the same lock at a time. Every Java object has a built-in intrinsic lock, also called a monitor. Synchronizing an instance method locks that method's object. When both increment tasks use the same `UnsafeCounter` object, synchronizing its increment operation prevents their read-modify-write steps from overlapping.
+
+## Visibility and `volatile`
+
+Visibility is whether one thread can reliably observe a value written by another thread. Declaring a field `volatile` makes reads observe the latest write to that field. It is useful for a simple shared flag, such as `running`, but it does not make `count++` safe because increment is a multi-step read-modify-write operation.
+
+## Atomicity and atomic variables
+
+Atomicity means an operation is indivisible from other threads' point of view. Atomic classes such as `AtomicInteger` provide atomic operations including increment. They are appropriate for simple independent values such as counters, where using a lock would be unnecessary.
+
+## Java Memory Model and happens-before
+
+The Java Memory Model defines how threads can see each other's writes and how operations may be ordered. A happens-before relationship guarantees that effects of one action are visible to another. Important examples are: actions before `Thread.start()` are visible to the started thread; a thread's completed actions are visible after another thread successfully returns from `join()`; unlocking a `synchronized` lock happens-before a later lock of that same lock; and a write to a `volatile` field happens-before a later read of that field.
+
+## `ExecutorService` and thread pools
+
+An `ExecutorService` manages worker threads and runs tasks submitted to it, so application code usually does not create a new `Thread` for every task. A fixed thread pool reuses a fixed number of workers. `submit()` accepts a task and returns a `Future` when a result or completion status is needed.
+
+## Executor shutdown
+
+`shutdown()` begins graceful shutdown: the executor rejects new tasks but lets already submitted tasks finish. `shutdownNow()` requests interruption of active tasks and returns queued tasks that did not start; it is not a guarantee that active tasks will stop. A program should always shut down an `ExecutorService` it creates.
 
 ## Interview summary
 
